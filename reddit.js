@@ -133,6 +133,27 @@ module.exports = function RedditAPI(conn) {
           }
         }
       );
+    },
+    getSinglePost: function(postId, callback) {
+      conn.query(`
+        SELECT id, title, url, userId, createdAt, updatedAt
+        FROM posts
+        WHERE id= ?
+        `, [postId],
+
+        function(err, results) {
+          if (err) {
+            callback(err);
+          }
+          else if (!results[0]) {
+            callback(new Error("This post does not exist."));
+          }
+          else {
+            var resultsObj = results[0];
+            callback(null, resultsObj);
+          }
+        }
+      );
     }
   };
 };
