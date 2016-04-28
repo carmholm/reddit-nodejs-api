@@ -12,7 +12,8 @@ module.exports = function RedditAPI(conn) {
         }
         else {
           conn.query(
-            'INSERT INTO `users` (`username`,`password`, `createdAt`) VALUES (?, ?, ?)', [user.username, hashedPassword, null],
+            'INSERT INTO `users` (`username`,`password`, `createdAt`) VALUES (?, ?, ?)', 
+            [user.username, hashedPassword, null],
             function(err, result) {
               if (err) {
                 /*
@@ -94,21 +95,41 @@ module.exports = function RedditAPI(conn) {
       var limit = options.numPerPage || 25; // if options.numPerPage is "falsy" then use 25
       var offset = (options.page || 0) * limit;
       
-      conn.query(`
-        SELECT \`id\`,\`title\`,\`url\`,\`userId\`, \`createdAt\`, \`updatedAt\`
-        FROM \`posts\`
-        ORDER BY \`createdAt\` DESC
+conn.query(`
+        SELECT p.id AS postId, p.title, p.url, p.userId, p.createdAt, p.updatedAt, u.id AS userId, u.username, u.createdAt AS userCreatedAt, u.updatedAt AS userUpdatedAt
+        FROM posts p 
+        JOIN users u 
+        ON p.userId=u.id
+        ORDER BY p.createdAt DESC
         LIMIT ? OFFSET ?
         `, [limit, offset],
         function(err, results) {
+          
           if (err) {
             callback(err);
           }
           else {
-            callback(null, results);
+            var newResults = results.map(function(obj){
+                  var newObj = {};
+                  var userObj = {};
+                  newObj["id"] = obj.id;
+                  newObj["title"] = obj.title;
+                  newObj["url"] = obj.url;
+                  newObj["createdAt"] = obj.createdAt;
+                  newObj["updatedAt"] = obj.updatedAt;
+                  newObj["userId"] = obj.userId;
+                  newObj["user"] = userObj;
+                  userObj["id"] = obj.userId;
+                  userObj["username"] = obj.username;
+                  userObj["createdAt"] = obj.userCreatedAt;
+                  userObj["updatedAt"] = obj.userUpdatedAt;
+                  return newObj;
+                });
+                callback(null, newResults);
           }
         }
       );
     }
-  }
-}
+  };
+};
+
