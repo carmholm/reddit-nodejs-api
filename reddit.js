@@ -233,6 +233,59 @@ module.exports = function RedditAPI(conn) {
           }
         }
       );
+    },
+    createComment: function(comment, callback) {
+
+      conn.query(
+        'INSERT INTO `comments` (`text`, `userId`, `postId`, `parentId`, `createdAt`) VALUES (?, ?, ? ,?, ?)', [comment.text, comment.userId, comment.postId, comment.parentId ? comment.parentId : null, null],
+        function(err, result) {
+          if (err || comment.parentId !== "number") {
+            callback(new Error("Please check your paramenters"));
+          }
+          else {
+            conn.query(
+              'SELECT `id`, `text`, `userId`, `postId`, `parentId`, `createdAt`, `updatedAt` FROM `comments` WHERE `id` = ?', [result.insertId],
+              function(err, result) {
+                if (err) {
+                  callback(err);
+                }
+                else {
+                  callback(null, result[0]);
+                }
+              }
+            );
+          }
+        }
+      );
+    },
+    getCommentsForPost: function(postId, callback) {
+      conn.query(
+        `SELECT c.id , c.text, c.createdAt, c.updatedAt, u.username, 
+        c1.id AS c1Id, c1.text AS c1Text, c1.createdAt AS c1CreatedAt, c1.updatedAt AS c1UpdatedAt, c1.parentId AS c1ParentId, 
+        c2.id AS c2Id, c2.text AS c2Text, c2.createdAt AS c2CreatedAt, c2.updatedAt AS c2UpdatedAt, c2.parentId AS c2ParentId
+        FROM comments c
+        LEFT JOIN comments c1 ON c.id=c1.parentId
+        LEFT JOIN comments c2 ON c1.id=c2.parentId
+        JOIN users u ON c.userId=u.id
+        WHERE c.postId = ? AND c.parentId IS NULL
+        ORDER BY c.createdAt, c1.createdAt, c2.createdAt`,
+        [postId],
+
+        function(err, results) {
+          if (err) {
+            callback(err);
+          }
+          else if (!results[0]) {
+            callback(new Error("There are no comments for this post."));
+          }
+          else {
+            // console.log(results);
+            
+            callback(null, results);
+          }
+        }
+      );
     }
   };
 };
+
