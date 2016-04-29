@@ -42,14 +42,14 @@ module.exports = function RedditAPI(conn) {
     },
     createPost: function(post, callback) {
       conn.query(
-        'INSERT INTO `posts` (`userId`, `title`, `url`, `createdAt`) VALUES (?, ?, ?, ?)', [post.userId, post.title, post.url, null],
+        'INSERT INTO `posts` (`userId`, `title`, `url`, `subredditId`, `createdAt`) VALUES (?, ?, ?, ?, ?)', [post.userId, post.title, post.url, post.subredditId, null],
         function(err, result) {
           if (err) {
             callback(err);
           }
           else {
             conn.query(
-              'SELECT `id`,`title`,`url`,`userId`, `createdAt`, `updatedAt` FROM `posts` WHERE `id` = ?', [result.insertId],
+              'SELECT `id`,`title`,`url`,`userId`, `subredditId`, `createdAt`, `updatedAt` FROM `posts` WHERE `id` = ?', [result.insertId],
               function(err, result) {
                 if (err) {
                   callback(err);
