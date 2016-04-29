@@ -72,10 +72,12 @@ module.exports = function RedditAPI(conn) {
       var offset = (options.page || 0) * limit;
 
       conn.query(`
-        SELECT p.id AS postId, p.title, p.url, p.userId, p.createdAt, p.updatedAt, u.id AS userId, u.username, u.createdAt AS userCreatedAt, u.updatedAt AS userUpdatedAt
+        SELECT p.id AS postId, p.title, p.url, p.userId, p.createdAt, p.updatedAt, s.id AS subredditId, s.name, s.description, s.createdAt AS subredditCreatedAt, s.updatedAt AS subredditUpdatedAt, u.id AS userId, u.username, u.createdAt AS userCreatedAt, u.updatedAt AS userUpdatedAt
         FROM posts p 
         JOIN users u 
         ON p.userId=u.id
+        JOIN subreddits s
+        ON p.subredditId=s.id
         ORDER BY p.createdAt DESC
         LIMIT ? OFFSET ?
         `, [limit, offset],
@@ -88,12 +90,19 @@ module.exports = function RedditAPI(conn) {
             var newResults = results.map(function(obj) {
               var newObj = {};
               var userObj = {};
-              newObj["id"] = obj.id;
+              var subObj = {};
+              newObj["id"] = obj.postId;
               newObj["title"] = obj.title;
               newObj["url"] = obj.url;
               newObj["createdAt"] = obj.createdAt;
               newObj["updatedAt"] = obj.updatedAt;
               newObj["userId"] = obj.userId;
+              newObj["subreddit"] = subObj;
+              subObj["id"] = obj.subredditId;
+              subObj["name"] = obj.name;
+              subObj["description"] = obj.description;
+              subObj["createdAt"] = obj.subredditCreatedAt;
+              subObj["updatedAt"] = obj.subredditUpdatedAt;
               newObj["user"] = userObj;
               userObj["id"] = obj.userId;
               userObj["username"] = obj.username;
