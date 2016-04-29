@@ -157,8 +157,8 @@ module.exports = function RedditAPI(conn) {
       );
     },
     createSubreddit: function(sub, callback) {
-      if (sub.description !== undefined) {
-        conn.query(`INSERT INTO subreddits (name) VALUES (?)`, [sub.name],
+      if (!sub.description) {
+        conn.query(`INSERT INTO subreddits (name, createdAt) VALUES (?, null)`, [sub.name],
           function(err, result) {
             if (err) {
               callback(err);
@@ -180,7 +180,7 @@ module.exports = function RedditAPI(conn) {
         );
       }
       else {
-        conn.query(`INSERT INTO subreddits (name, description) VALUES (?, ?)`, [sub.name, sub.description],
+        conn.query(`INSERT INTO subreddits (name, description, createdAt) VALUES (?, ?, null)`, [sub.name, sub.description],
           function(err, result) {
             if (err) {
               callback(err);
@@ -210,7 +210,7 @@ module.exports = function RedditAPI(conn) {
       var limit = options.numPerPage || 25;
       var offset = (options.page || 0) * limit;
 
-      conn.query(`SELECT id, name, description, createdAt, updatedAt FROM subreddits ORDER BY id DESC LIMIT ? OFFSET ?`, [limit, offset],
+      conn.query(`SELECT id, name, description, createdAt, updatedAt FROM subreddits ORDER BY id LIMIT ? OFFSET ?`, [limit, offset],
 
         function(err, results) {
           if (err) {
