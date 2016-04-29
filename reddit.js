@@ -3,7 +3,7 @@ var HASH_ROUNDS = 10;
 
 module.exports = function RedditAPI(conn) {
   return {
-    
+
     createUser: function(user, callback) {
 
       bcrypt.hash(user.password, HASH_ROUNDS, function(err, hashedPassword) {
@@ -157,29 +157,29 @@ module.exports = function RedditAPI(conn) {
       );
     },
     createSubreddit: function(sub, callback) {
-    if (sub.description !== undefined) {
-      conn.query(`INSERT INTO subreddits (name) VALUES (?)`, [sub.name],
-        function(err, result) {
-          if (err) {
-            callback(err);
-          }
-          else {
-            conn.query(
-              `SELECT id, name FROM subreddits WHERE id=?`, [result.insertId],
-              function(err, result) {
-                if (err) {
-                  callback(err);
+      if (sub.description !== undefined) {
+        conn.query(`INSERT INTO subreddits (name) VALUES (?)`, [sub.name],
+          function(err, result) {
+            if (err) {
+              callback(err);
+            }
+            else {
+              conn.query(
+                `SELECT id, name FROM subreddits WHERE id=?`, [result.insertId],
+                function(err, result) {
+                  if (err) {
+                    callback(err);
+                  }
+                  else {
+                    callback(null, result[0]);
+                  }
                 }
-                else {
-                  callback(null, result[0]);
-                }
-              }
-            );
+              );
+            }
           }
-        }
-      );  
-    }
-    else {
+        );
+      }
+      else {
         conn.query(`INSERT INTO subreddits (name, description) VALUES (?, ?)`, [sub.name, sub.description],
           function(err, result) {
             if (err) {
@@ -201,7 +201,29 @@ module.exports = function RedditAPI(conn) {
           }
         );
       }
+    },
+    getAllSubreddits: function(options, callback) {
+      if (!callback) {
+        callback = options;
+        options = {};
+      }
+      var limit = options.numPerPage || 25;
+      var offset = (options.page || 0) * limit;
+
+      conn.query(`SELECT id, name, description, createdAt, updatedAt FROM subreddits ORDER BY id DESC LIMIT ? OFFSET ?`, [limit, offset],
+
+        function(err, results) {
+          if (err) {
+            callback(err);
+          }
+          else if (!results[0]) {
+            callback(new Error("No subreddits exist."));
+          }
+          else {
+            callback(null, results);
+          }
+        }
+      );
     }
   };
 };
-
